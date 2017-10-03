@@ -14,7 +14,8 @@ class App extends Component {
 
     this.state = {
       vehiclesToDisplay: [],
-      buyersToDisplay: []
+      buyersToDisplay: [],
+      baseUrl: "https://joes-autos.herokuapp.com/"
     }
 
     this.getVehicles = this.getVehicles.bind(this);
@@ -30,38 +31,67 @@ class App extends Component {
   }
 
   getVehicles() {
-    // axios (GET)
+    // axios (GET) 
     // setState with response -> vehiclesToDisplay
+    // .then() takes a callback that runs after receiving data
+    axios.get(this.state.baseUrl + "api/vehicles")
+         .then((response) => {
+           this.setState({ vehiclesToDisplay: response.data})});
   }
 
   getPotentialBuyers() {
     // axios (GET)
     // setState with response -> buyersToDisplay
+    axios.get(this.state.baseUrl + `api/buyers`)
+         .then((response) => {
+           this.setState({
+             buyersToDisplay: response.data
+           })
+         })
   }
 
   sellCar(id) {
     // axios (DELETE)
     // setState with response -> vehiclesToDisplay
+    axios.delete(this.state.baseUrl + `api/vehicles/${id}`)
+         .then((response) => {
+           this.setState({vehiclesToDisplay : response.data.vehicles})
+         })
   }
 
-  filterByMake() {
-    let make = this.refs.selectedMake.value
+  filterByMake(e) {
+    let make = e.target.value
     // axios (GET)
     // setState with response -> vehiclesToDisplay
+    axios.get(this.state.baseUrl + `api/vehicles/?make=${make}`)
+         .then((response) => {
+           this.setState({vehiclesToDisplay: response.data})
+         })
   }
 
-  filterByColor() {
-    let color = this.refs.selectedColor.value;
+  filterByColor(e) {
+    let color = e.target.value;
     // axios (GET)
     // setState with response -> vehiclesToDisplay
+    axios.get(this.state.baseUrl + `api/vehicles/?color=${color}`)
+    .then((response) => {
+      this.setState({vehiclesToDisplay: response.data})
+    })
   }
 
-  updatePrice(priceChange) {
+  updatePrice(priceChange, id) {
     // axios (PUT)
     // setState with response -> vehiclesToDisplay
+    axios.put(this.state.baseUrl + `api/vehicles/${id}/${priceChange}`)
+         .then((response) => {
+           this.setState({
+             vehiclesToDisplay: response.data.vehicles
+           })
+         });
   }
 
   addCar(){
+    // add to end of url to post
   let newCar = {
     make: this.refs.make.value,
     model: this.refs.model.value,
@@ -71,6 +101,14 @@ class App extends Component {
   }  
   // axios (POST)
   // setState with response -> vehiclesToDisplay
+  axios.post(this.state.baseUrl + "api/vehicles/", newCar)
+       .then((response) => {
+         if(response.status === 200) {
+          this.setState({vehiclesToDisplay : response.data.vehicles});
+         } else {
+           alert("addCar returned", response.status);
+         }
+       })
 }
 
 addBuyer() {
@@ -81,18 +119,30 @@ addBuyer() {
   }
   //axios (POST)
   // setState with response -> buyersToDisplay
+  axios.post(this.state.baseUrl + `api/buyers/`, newBuyer)
+       .then((response) => {
+         this.setState({buyersToDisplay: response.data.buyers})
+       })
 }
 
-nameSearch() {
+nameSearch(e) {
   // axios (GET)
   // setState with response -> buyersToDisplay
-  let searchLetters = this.refs.searchLetters.value;
+  let searchLetters = e.target.value;
+  axios.get(this.state.baseUrl + `api/buyers/?name=${searchLetters}`)
+       .then((response) => {
+         this.setState({buyersToDisplay: response.data})
+       })
 }
 
-byYear() {
-  let year = this.refs.year.value;
+byYear(e) {
+  let year = e.target.value;
   // axios (GET)
   // setState with response -> vehiclesToDisplay
+  axios.get(this.state.baseUrl + `api/vehicles/?year=${year}`)
+       .then((response) => {
+         this.setState({vehiclesToDisplay: response.data})
+        });
 }
 
 // ==============================================
@@ -126,11 +176,11 @@ resetData(dataToReset) {
           <p>Price: { v.price }</p>
           <button
             className='btn btn-sp'
-            onClick={ () => this.updatePrice('up') }
+            onClick={ () => this.updatePrice('up', v.id) }
             >Increase Price</button>
           <button
             className='btn btn-sp'
-            onClick={ () => this.updatePrice('down') }
+            onClick={ () => this.updatePrice('down', v.id) }
             >Decrease Price</button>  
           <button 
             className='btn btn-sp'
@@ -200,11 +250,11 @@ resetData(dataToReset) {
             ref='searchLetters'/>
            <input 
             ref='year'
+            onChange={this.byYear}
             className='btn-sp'
             type='number'
             placeholder='Year'/> 
           <button
-            onClick={ this.byYear }
             className='btn-inp'>
             Go</button>  
           <button
